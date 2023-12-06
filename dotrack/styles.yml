@@ -1,0 +1,83 @@
+application:
+  window:
+    layout: grid
+
+  .background:
+    background:
+      red: 0.9
+      green: 0.9
+      blue: 0.9
+      alpha: 1.
+
+    padding:
+      top: 10
+      left: 10
+      right: 10
+      bottom: 10
+
+    layout: grid
+
+todo:
+  todo:
+    layout: align
+
+  todolist:
+    alignment: top
+    stretch: horizontal
+
+  .footer:
+    alignment: bottom
+    stretch: horizontal
+    layout: stack
+
+  # todo: this should also work when using the tag instead of a class
+  .input:
+    gravity: stretch
+
+  button:
+    layout: align
+
+  button.hover:
+    background:
+      red: 0.8
+      green: 1
+      blue: 0.8
+      alpha: 1.
+
+  $button_text:
+    alignment: center
+
+todolist:
+  todolist:
+    layout: grid
+
+  .todolist:
+    layout: stack
+    direction: vertical
+
+todo_item:
+  todo_item:
+    layout: stack
+    direction: horizontal
+    gravity: stretch
+
+  .todotext_wrap:
+    gravity: stretch
+    stretch: 1
+    layout: align
+
+    padding:
+      left: 5
+      right: 5
+
+  .todotext:
+    alignment: left
+
+  .icon:
+    width: 20
+    height: 20
+    mouse_cursor: hand
+
+global:
+  .mouse_focus:
+    draw_bounding_box: false
