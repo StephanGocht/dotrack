@@ -1,4 +1,4 @@
-<templates>
+<templates xmlns:py="https://github.com/StephanGocht/guiml/">
     <application>
         <window>
             <div class="background">
@@ -7,6 +7,9 @@
         </window>
     </application>
 
+    <icon>
+        <text py_text="self.text" mouse_cursor="hand"></text>
+    </icon>
 
     <todo>
         <todolist id="todolist" py_todos="self.todos"></todolist>
@@ -34,14 +37,16 @@
 
 
     <todo_item>
-        <svg class="icon"
-             py_src="self.checkbox_svg()"
-             on_click="self.checkbox_clicked"></svg>
+        <icon
+            py_name="'check_box' if self.item.done else 'check_box_outline_blank'"
+            on_click="self.checkbox_clicked"
+        ></icon>
         <div class="todotext_wrap">
                 <text class="todotext" py_text="self.item.text"></text>
         </div>
-        <svg class="icon"
-             py_src="self.delete_svg()"
-             on_click="self.delete_clicked"></svg>
+        <icon
+            class="delete"
+            on_click="self.delete_clicked"
+        ></icon>
     </todo_item>
 </templates>

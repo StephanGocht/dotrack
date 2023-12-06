@@ -73,10 +73,11 @@ todo_item:
   .todotext:
     alignment: left
 
-  .icon:
-    width: 20
-    height: 20
-    mouse_cursor: hand
+  .delete:
+    name: delete
+
+  .delete.hover:
+    color: red
 
 global:
   .mouse_focus:

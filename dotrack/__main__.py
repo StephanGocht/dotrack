@@ -15,6 +15,8 @@ from guiml.components import Container
 from guiml.resources import ResourceManager
 import json
 
+from dotrack import icon  # noqa: F401
+
 BASE_DIR = Path(__file__).parent.resolve()
 
 res = ResourceManager(
