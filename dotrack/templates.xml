@@ -3,6 +3,12 @@
         <window>
             <div class="background">
                 <todo></todo>
+                <div class="timer_wrap">
+                    <div class="timer">
+                        <text text="You worked 03:00h today."></text>
+                        <timer></timer>
+                    </div>
+                </div>
             </div>
         </window>
     </application>
@@ -10,6 +16,25 @@
     <icon>
         <text py_text="self.text" mouse_cursor="hand"></text>
     </icon>
+
+    <timer>
+        <div class="progress_wrap">
+            <circle_progress py_progress="self.progress"></circle_progress>
+        </div>
+        <div class="h_stack">
+            <text text="Remaining: "></text>
+            <text py_text="self.remaining_str"></text>
+        </div>
+        <div class="h_stack">
+            <button
+                on_click='self.on_start'>
+                <text
+                    py_text="'Start' if self.last_start is None else 'Stop'"
+                    class="no_select"
+                ></text>
+            </button>
+        </div>
+    </timer>
 
     <todo>
         <todolist id="todolist" py_todos="self.todos"></todolist>

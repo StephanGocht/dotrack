@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from guiml.components import Component
 from guiml.core import run
 
@@ -9,27 +7,15 @@ import dataclasses
 
 from guiml.injectables import Injectable, injectable
 
-from guiml.components import component as guiml_component
+
 from guiml.components import Container
 
-from guiml.resources import ResourceManager
 import json
 
 from dotrack import icon  # noqa: F401
+from dotrack import timer  # noqa: F401
 
-BASE_DIR = Path(__file__).parent.resolve()
-
-res = ResourceManager(
-    basedir=BASE_DIR
-)
-
-
-def component(name):
-    return guiml_component(
-        name=name,
-        template=res.template_file("templates.xml"),
-        style=res.style_file("styles.yml"),
-    )
+from dotrack.shared import component, res, BASE_DIR
 
 
 @component("application")
@@ -40,7 +26,7 @@ class Application(Component):
 def main():
     run(
         global_style=res.style_file("styles.yml", "global"),
-        interval=1 / 120
+        interval=1 / 30
     )
 
 
@@ -182,6 +168,9 @@ class TodoItemComponent(Container):
     def on_destroy(self):
         self.destroyed = True
         super().on_destroy()
+
+
+
 
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
 application:
   window:
     layout: grid
+    width: 800
+    show_fps: false
 
   .background:
     background:
@@ -16,6 +18,22 @@ application:
       bottom: 10
 
     layout: grid
+    rows: 1
+    cols: 2
+
+  .timer_wrap:
+    col: 1
+    layout: align
+
+timer:
+  .h_stack:
+    layout: stack
+    direction: horizontal
+
+  .progress_wrap:
+    margin:
+      top: 20
+      bottom: 20
 
 todo:
   todo:
