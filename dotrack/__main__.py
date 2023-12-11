@@ -123,8 +123,11 @@ class TodoService(Injectable):
         if self.selected is not None:
             self.selected.selected = False
 
-        self.selected = item
-        self.selected.selected = True
+        if self.selected == item:
+            self.selected = None
+        else:
+            self.selected = item
+            self.selected.selected = True
 
     def add(self, text):
         self.todos.append(TodoItem(text))
