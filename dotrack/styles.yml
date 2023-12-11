@@ -1,102 +1,156 @@
 application:
-  window:
-    layout: grid
-    width: 800
-    show_fps: false
+    window:
+        layout: grid
+        width: 1000
+        height: 500
+        show_fps: true
 
-  .background:
-    background:
-      red: 0.9
-      green: 0.9
-      blue: 0.9
-      alpha: 1.
+    .background:
+        background:
+            red: 0.9
+            green: 0.9
+            blue: 0.9
+            alpha: 1.
 
-    padding:
-      top: 10
-      left: 10
-      right: 10
-      bottom: 10
+        layout: stack
+        direction: horizontal
 
-    layout: grid
-    rows: 1
-    cols: 2
+    menu:
+        padding:
+            top: 10
+            left: 10
+            right: 10
+            bottom: 10
 
-  .timer_wrap:
-    col: 1
-    layout: align
+    router_outlet:
+        gravity: stretch
+        stretch: 1
+
+router_outlet:
+    router_outlet:
+        layout: grid
+
+todo_view:
+    todo_view:
+        layout: stack
+        direction: horizontal
+
+        padding:
+            top: 10
+            left: 10
+            right: 10
+            bottom: 10
+
+    todo:
+        gravity: stretch
+        stretch: 1
+
+    .timer_wrap:
+        padding:
+            left: 20
+            right: 10
+
+menu:
+    icon:
+        size: 30000
+
+    icon.hover:
+        color: '#555555'
 
 timer:
-  .h_stack:
-    layout: stack
-    direction: horizontal
+    .h_stack:
+        layout: stack
+        direction: horizontal
 
-  .progress_wrap:
-    margin:
-      top: 20
-      bottom: 20
+    .progress_wrap:
+        margin:
+            top: 20
+            bottom: 20
 
 todo:
-  todo:
-    layout: align
+    todo:
+        layout: align
 
-  todolist:
-    alignment: top
-    stretch: horizontal
+    todolist:
+        alignment: top
+        stretch: horizontal
 
-  .footer:
-    alignment: bottom
-    stretch: horizontal
-    layout: stack
+    .footer:
+        alignment: bottom
+        stretch: horizontal
+        layout: stack
 
-  # todo: this should also work when using the tag instead of a class
-  .input:
-    gravity: stretch
+    # todo: this should also work when using the tag instead of a class
+    .input:
+        gravity: stretch
 
-  button:
-    layout: align
+    button:
+        layout: align
 
-  button.hover:
-    background:
-      red: 0.8
-      green: 1
-      blue: 0.8
-      alpha: 1.
+    button.hover:
+        background:
+            red: 0.8
+            green: 1
+            blue: 0.8
+            alpha: 1.
 
-  $button_text:
-    alignment: center
+    $button_text:
+        alignment: center
 
 todolist:
-  todolist:
-    layout: grid
+    todolist:
+        layout: grid
 
-  .todolist:
-    layout: stack
-    direction: vertical
+    .todolist:
+        layout: stack
+        direction: vertical
 
 todo_item:
-  todo_item:
-    layout: stack
-    direction: horizontal
-    gravity: stretch
+    todo_item:
+        layout: stack
+        direction: horizontal
+        gravity: stretch
 
-  .todotext_wrap:
-    gravity: stretch
-    stretch: 1
-    layout: align
+    .todotext_wrap:
+        gravity: stretch
+        stretch: 1
+        layout: align
+        mouse_coursor: hand
 
-    padding:
-      left: 5
-      right: 5
+        padding:
+            left: 5
+            right: 5
 
-  .todotext:
-    alignment: left
+    .todotext_wrap.hover:
+        background:
+            red: 1.
+            green: 1.
+            blue: 1.
+            alpha: 1.
 
-  .delete:
-    name: delete
+    .todotext_wrap.selected:
+        background:
+            red: 0.5
+            green: 0.5
+            blue: 1.
+            alpha: 1.
 
-  .delete.hover:
-    color: red
+    .todotext_wrap.selected.hover:
+        background:
+            red: 0.8
+            green: 0.8
+            blue: 1.
+            alpha: 1.
+
+    .todotext:
+        alignment: left
+
+    .delete:
+        name: delete
+
+    .delete.hover:
+        color: red
 
 global:
-  .mouse_focus:
-    draw_bounding_box: false
+    .mouse_focus:
+        draw_bounding_box: false

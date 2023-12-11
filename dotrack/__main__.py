@@ -1,4 +1,4 @@
-from guiml.components import Component
+from guiml.components import Component, Div
 from guiml.core import run
 
 from dataclasses import dataclass, field
@@ -34,6 +34,58 @@ def main():
 class TodoItem:
     text: str
     done: bool = False
+    selected: bool = False
+
+
+@injectable("application")
+class RouterService(Injectable):
+    def on_init(self):
+        self.view = 'todo'
+
+
+@component("menu")
+class Menu(Div):
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        router: RouterService
+
+    @dataclass
+    class Properties(Div.Properties):
+        pass
+
+    def navigate(self, target):
+        self.dependencies.router.view = target
+
+    def on_home(self):
+        self.navigate('todo')
+
+    def on_lists(self):
+        self.navigate('events')
+
+
+@component(name="router_outlet")
+class RouterOutlet(Container):
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        router: RouterService
+
+    @dataclass
+    class Properties(Container.Properties):
+        pass
+
+    @property
+    def view(self):
+        return self.dependencies.router.view
+
+
+@component(name="todo_view")
+class TodoView(Div):
+    pass
+
+
+@component(name="event_view")
+class EventView(Div):
+    pass
 
 
 @injectable("todo")
@@ -42,6 +94,7 @@ class TodoService(Injectable):
 
     def on_init(self):
         self.load()
+        self.selected = None
 
     def load(self):
         try:
@@ -54,15 +107,24 @@ class TodoService(Injectable):
             data = []
 
         self.todos = [TodoItem(**item) for item in data]
+        for todo in self.todos:
+            todo.selected = False
 
     def save(self):
         data = [dataclasses.asdict(item) for item in (self.todos)]
 
         try:
             with open(self.SAVE_FILE, 'w') as f:
-                json.dump(data, f)
+                json.dump(data, f, indent=4)
         except OSError as e:
             print('Error saving file: ' % (str(e)))
+
+    def select(self, item):
+        if self.selected is not None:
+            self.selected.selected = False
+
+        self.selected = item
+        self.selected.selected = True
 
     def add(self, text):
         self.todos.append(TodoItem(text))
@@ -169,8 +231,8 @@ class TodoItemComponent(Container):
         self.destroyed = True
         super().on_destroy()
 
-
-
+    def on_select(self):
+        self.dependencies.todo_service.select(self.item)
 
 
 if __name__ == '__main__':

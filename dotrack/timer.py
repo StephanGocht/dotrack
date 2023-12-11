@@ -20,7 +20,7 @@ class Timer(Container):
 
     @dataclass
     class Properties(Container.Properties):
-        duration: int = 3
+        duration: int = 10
         """Timer duration in seconds"""
 
     @property
@@ -73,7 +73,7 @@ class CircleProgress(UIComponent):
     class Properties(UIComponent.Properties):
         width: int = 150
         height: int = 150
-        progress: float = 25
+        progress: float = 0
 
     @property
     def width(self):
@@ -92,7 +92,7 @@ class CircleProgress(UIComponent):
         with ctx:
             ctx.move_to(center_x, center_y)
             ctx.arc(center_x, center_y, radius, -math.pi/2, -math.pi/2 + 2 * math.pi / 100 * progress)
-            pat = cairo.SolidPattern(0, 1, 0, 1)
+            pat = cairo.SolidPattern(0, 0.8, 0, 1)
             ctx.set_source(pat)
             ctx.fill()
 

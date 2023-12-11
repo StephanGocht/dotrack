@@ -2,13 +2,8 @@
     <application>
         <window>
             <div class="background">
-                <todo></todo>
-                <div class="timer_wrap">
-                    <div class="timer">
-                        <text text="You worked 03:00h today."></text>
-                        <timer></timer>
-                    </div>
-                </div>
+                <menu></menu>
+                <router_outlet></router_outlet>
             </div>
         </window>
     </application>
@@ -16,6 +11,30 @@
     <icon>
         <text py_text="self.text" mouse_cursor="hand"></text>
     </icon>
+
+    <menu>
+        <icon name="home" on_click="self.on_home"></icon>
+        <icon name="lists" on_click="self.on_lists"></icon>
+    </menu>
+
+    <router_outlet>
+        <todo_view control="if self.view == 'todo'" />
+        <event_view control="if self.view == 'events'" />
+    </router_outlet>
+
+    <todo_view>
+        <todo></todo>
+        <div class="timer_wrap">
+            <div class="timer">
+                <text text="You worked 03:00h today."></text>
+                <timer></timer>
+            </div>
+        </div>
+    </todo_view>
+
+    <event_view>
+        <text text="a bunch of events"></text>
+    </event_view>
 
     <timer>
         <div class="progress_wrap">
@@ -66,8 +85,9 @@
             py_name="'check_box' if self.item.done else 'check_box_outline_blank'"
             on_click="self.checkbox_clicked"
         ></icon>
-        <div class="todotext_wrap">
-                <text class="todotext" py_text="self.item.text"></text>
+        <div class="todotext_wrap" class_selected="self.item.selected"
+             on_click="self.on_select">
+                <text class="todotext no_select" py_text="self.item.text"></text>
         </div>
         <icon
             class="delete"
