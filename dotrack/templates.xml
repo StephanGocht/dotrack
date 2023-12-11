@@ -9,7 +9,7 @@
     </application>
 
     <icon>
-        <text py_text="self.text" mouse_cursor="hand"></text>
+        <text class="no_select" py_text="self.text" mouse_cursor="hand"></text>
     </icon>
 
     <menu>
