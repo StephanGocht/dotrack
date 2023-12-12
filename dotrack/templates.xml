@@ -85,7 +85,7 @@
             py_name="'check_box' if self.item.done else 'check_box_outline_blank'"
             on_click="self.checkbox_clicked"
         ></icon>
-        <div class="todotext_wrap" class_selected="self.item.selected"
+        <div class="todotext_wrap" class_selected="self.is_selected()"
              on_click="self.on_select">
                 <text class="todotext no_select" py_text="self.item.text"></text>
         </div>

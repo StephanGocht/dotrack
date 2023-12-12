@@ -174,6 +174,9 @@ class TodoItemComponent(Container):
     def on_select(self):
         self.dependencies.todo_service.select(self.item)
 
+    def is_selected(self):
+        return self.dependencies.todo_service.is_selected(self.item)
+
 
 if __name__ == '__main__':
     main()
