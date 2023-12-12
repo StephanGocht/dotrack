@@ -201,7 +201,7 @@ class EventType(peewee.Model):
         events = set((x.value for x in iter(cls.Values)))
 
         for event_type in cls.select():
-            if event_type in events:
+            if event_type.name in events:
                 setattr(cls, event_type.name.upper(), event_type)
                 events.discard(event_type.name)
 

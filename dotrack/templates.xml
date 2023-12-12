@@ -14,12 +14,12 @@
 
     <menu>
         <icon name="home" on_click="self.on_home"></icon>
-        <icon name="lists" on_click="self.on_lists"></icon>
+        <icon name="pending_actions" on_click="self.on_lists"></icon>
     </menu>
 
     <router_outlet>
         <todo_view control="if self.view == 'todo'" />
-        <event_view control="if self.view == 'events'" />
+        <event_list control="if self.view == 'events'" />
     </router_outlet>
 
     <todo_view>
@@ -32,9 +32,21 @@
         </div>
     </todo_view>
 
-    <event_view>
-        <text text="a bunch of events"></text>
-    </event_view>
+    <event_list>
+        <div class="table" cols="10" py_rows="len(self.events)">
+            <div class="row" control="for i, event in enumerate(self.events)">
+                <text col="0" colspan="8" py_row="i" py_text="event.todo.text"></text>
+                <text col="7" colspan="1" py_row="i" py_text="event.event_type.name"></text>
+                <text col="8" colspan="2" py_row="i" py_text="self.format_time(event)"></text>
+            </div>
+        </div>
+    </event_list>
+
+    <event>
+        <text py_text="self.event.todo.text"></text>
+        <text py_text="self.event.event_type.name"></text>
+        <text py_text="self.format_time()"></text>
+    </event>
 
     <timer>
         <div class="progress_wrap">

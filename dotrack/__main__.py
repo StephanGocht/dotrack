@@ -11,7 +11,8 @@ from guiml.components import Container
 
 from dotrack import icon  # noqa: F401
 from dotrack import timer  # noqa: F401
-from dotrack.model import TodoService, Todo
+from dotrack.model import TodoService
+import dotrack.model as model
 
 from dotrack.shared import component, res, BASE_DIR
 
@@ -31,7 +32,7 @@ def main():
 @injectable("application")
 class RouterService(Injectable):
     def on_init(self):
-        self.view = 'todo'
+        self.view = 'events'
 
 
 @component("menu")
@@ -57,7 +58,7 @@ class Menu(Div):
 @component(name="router_outlet")
 class RouterOutlet(Container):
     @dataclass
-    class Dependencies(Div.Dependencies):
+    class Dependencies(Container.Dependencies):
         router: RouterService
 
     @dataclass
@@ -74,9 +75,46 @@ class TodoView(Div):
     pass
 
 
-@component(name="event_view")
-class EventView(Div):
-    pass
+@component(name="event_list")
+class EventList(Div):
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        pass
+
+    @dataclass
+    class Properties(Div.Properties):
+        pass
+
+    @property
+    def events(self):
+        data = (model.Event
+                .select(model.Event, model.EventType, model.Todo)
+                .join(model.Todo)
+                .switch(model.Event)
+                .join(model.EventType)
+                )
+        return data
+
+    def format_time(self, event):
+        return str(event.time)[:19]
+
+
+@component(name="event")
+class EventComponent(Div):
+    @dataclass
+    class Properties(Div.Properties):
+        event: model.Event = None
+
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        pass
+
+    @property
+    def event(self):
+        return self.properties.event
+
+    def format_time(self):
+        return str(self.event.time)[:19]
 
 
 @component("todo")
@@ -126,14 +164,14 @@ class TodoList(Container):
 
 
 @component("todo_item")
-class TodoItemComponent(Container):
+class Todo(Container):
     @dataclass
     class Dependencies(Container.Dependencies):
         todo_service: TodoService
 
     @dataclass
     class Properties(Container.Properties):
-        item: Todo = None
+        item: model.Todo = None
 
     def on_init(self):
         self.destroyed = False

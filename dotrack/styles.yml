@@ -50,6 +50,28 @@ todo_view:
             left: 20
             right: 10
 
+event_list:
+    .row:
+        layout: ''
+
+    .table:
+        layout: grid
+        cols: 3
+
+    event_list:
+        layout: grid
+
+        padding:
+            top: 10
+            left: 10
+            right: 10
+            bottom: 10
+
+event:
+    event:
+        layout: stack
+        direction: horizontal
+
 menu:
     icon:
         size: 30000
