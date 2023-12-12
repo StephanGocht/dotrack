@@ -95,7 +95,7 @@ class TodoService(Injectable):
 
     def toggle_done(self, item):
         if item.done is None:
-            item.done = datetime.now()
+            item.done = datetime.datetime.now()
         else:
             item.done = None
         item.save()
@@ -158,7 +158,7 @@ class Timer(Injectable, Subscriber):
                 time=datetime.datetime.now())
 
     def stop(self):
-        if not self.is_active():
+        if not self.is_active() or not self.is_running():
             return
 
         print('stop')

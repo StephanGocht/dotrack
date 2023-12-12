@@ -56,7 +56,6 @@ event_list:
 
     .table:
         layout: grid
-        cols: 3
 
     event_list:
         layout: grid
