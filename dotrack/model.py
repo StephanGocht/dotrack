@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 import datetime
+import itertools
 
 import peewee
 import time
@@ -80,6 +81,40 @@ class TodoService(Injectable):
             self.selected = None
         else:
             self.selected = item
+
+    def work_time(self):
+        today = datetime.date.today()
+        end_of_today = today + datetime.timedelta(days=1)
+
+        events = (
+            Event.select()
+            .where((today <= Event.time) & (Event.time < end_of_today))
+            .where((Event.event_type == EventType.START)
+                   | (Event.event_type == EventType.STOP))
+            .order_by(Event.time)
+        )
+
+        starts = []
+        stops = []
+        for event in events:
+            if event.event_type == EventType.START:
+                starts.append(event)
+            else:
+                stops.append(event)
+
+        work_time = datetime.timedelta()
+
+        stops = iter(stops)
+        for start in starts:
+            for stop in stops:
+                if start.time < stop.time and start.todo_id == stop.todo_id:
+                    break
+            else:
+                break
+
+            work_time += stop.time - start.time
+
+        return work_time
 
     def is_selected(self, item):
         if self.selected is None:

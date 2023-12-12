@@ -26,7 +26,7 @@
         <todo></todo>
         <div class="timer_wrap">
             <div class="timer">
-                <text text="You worked 03:00h today."></text>
+                <text py_text="f'you worked {self.work_time()}h today.'"></text>
                 <timer></timer>
             </div>
         </div>

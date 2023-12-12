@@ -32,14 +32,14 @@ def main():
 @injectable("application")
 class RouterService(Injectable):
     def on_init(self):
-        self.view = 'events'
+        self.view = 'todo'
 
 
 @component("menu")
 class Menu(Div):
     @dataclass
     class Dependencies(Div.Dependencies):
-        router: RouterService
+        router: RouterService = None
 
     @dataclass
     class Properties(Div.Properties):
@@ -59,7 +59,7 @@ class Menu(Div):
 class RouterOutlet(Container):
     @dataclass
     class Dependencies(Container.Dependencies):
-        router: RouterService
+        router: RouterService = None
 
     @dataclass
     class Properties(Container.Properties):
@@ -72,7 +72,19 @@ class RouterOutlet(Container):
 
 @component(name="todo_view")
 class TodoView(Div):
-    pass
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        todo_service: TodoService = None
+
+    @dataclass
+    class Properties(Div.Properties):
+        pass
+
+    def work_time(self):
+        timedelta = self.dependencies.todo_service.work_time()
+        hours, remainder = divmod(timedelta.total_seconds(), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{int(hours):02}:{int(minutes):02}"
 
 
 @component(name="event_list")
@@ -121,8 +133,8 @@ class EventComponent(Div):
 class TodoComponent(Container):
 
     @dataclass
-    class Dependencies:
-        todo_service: TodoService
+    class Dependencies(Container.Dependencies):
+        todo_service: TodoService = None
 
     @dataclass
     class Properties(Container.Properties):
