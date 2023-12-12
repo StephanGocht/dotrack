@@ -3,17 +3,15 @@ from guiml.core import run
 
 from dataclasses import dataclass, field
 
-import dataclasses
 
 from guiml.injectables import Injectable, injectable
 
 
 from guiml.components import Container
 
-import json
-
 from dotrack import icon  # noqa: F401
 from dotrack import timer  # noqa: F401
+from dotrack.model import TodoService, Todo
 
 from dotrack.shared import component, res, BASE_DIR
 
@@ -28,13 +26,6 @@ def main():
         global_style=res.style_file("styles.yml", "global"),
         interval=1 / 30
     )
-
-
-@dataclass
-class TodoItem:
-    text: str
-    done: bool = False
-    selected: bool = False
 
 
 @injectable("application")
@@ -88,62 +79,8 @@ class EventView(Div):
     pass
 
 
-@injectable("todo")
-class TodoService(Injectable):
-    SAVE_FILE = BASE_DIR / 'todos.json'
-
-    def on_init(self):
-        self.load()
-        self.selected = None
-
-    def load(self):
-        try:
-            with open(self.SAVE_FILE) as f:
-                data = json.load(f)
-        except OSError as e:
-            print('Create empty todolist, due to error opening saved todos.'
-                  'Error: %s' % (str(e)))
-
-            data = []
-
-        self.todos = [TodoItem(**item) for item in data]
-        for todo in self.todos:
-            todo.selected = False
-
-    def save(self):
-        data = [dataclasses.asdict(item) for item in (self.todos)]
-
-        try:
-            with open(self.SAVE_FILE, 'w') as f:
-                json.dump(data, f, indent=4)
-        except OSError as e:
-            print('Error saving file: ' % (str(e)))
-
-    def select(self, item):
-        if self.selected is not None:
-            self.selected.selected = False
-
-        if self.selected == item:
-            self.selected = None
-        else:
-            self.selected = item
-            self.selected.selected = True
-
-    def add(self, text):
-        self.todos.append(TodoItem(text))
-        self.save()
-
-    def remove(self, item):
-        self.todos.remove(item)
-        self.save()
-
-    def toggle_done(self, item):
-        item.done = not item.done
-        self.save()
-
-
 @component("todo")
-class Todo(Container):
+class TodoComponent(Container):
 
     @dataclass
     class Dependencies:
@@ -196,7 +133,7 @@ class TodoItemComponent(Container):
 
     @dataclass
     class Properties(Container.Properties):
-        item: TodoItem = None
+        item: Todo = None
 
     def on_init(self):
         self.destroyed = False

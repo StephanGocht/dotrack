@@ -48,7 +48,7 @@
             <button
                 on_click='self.on_start'>
                 <text
-                    py_text="'Start' if self.last_start is None else 'Stop'"
+                    py_text="'Stop' if self.dependencies.timer.is_running() else 'Start'"
                     class="no_select"
                 ></text>
             </button>

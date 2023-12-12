@@ -1,7 +1,6 @@
 from guiml.components import UIComponent
 
-from dataclasses import dataclass, field
-from datetime import timedelta
+from dataclasses import dataclass
 
 import cairocffi as cairo
 
@@ -10,13 +9,14 @@ import math
 import time
 
 from dotrack.shared import component
+from dotrack.model import Timer
 
 
 @component("timer")
-class Timer(Container):
+class TimerComponent(Container):
     @dataclass
     class Dependencies(Container.Dependencies):
-        pass
+        timer: Timer
 
     @dataclass
     class Properties(Container.Properties):
@@ -25,17 +25,11 @@ class Timer(Container):
 
     @property
     def progress(self):
-        duration = self.properties.duration
-        result = max(0, self.remaining) * 100 / duration
-        return result
+        return self.dependencies.timer.progress
 
     @property
     def remaining(self):
-        duration = self.properties.duration
-        if self.last_start is None:
-            return duration
-        else:
-            return duration - (time.monotonic() - self.last_start)
+        return self.dependencies.timer.remaining
 
     @property
     def remaining_str(self):
@@ -51,16 +45,15 @@ class Timer(Container):
     def on_init(self):
         super().on_init()
 
-        self.last_start = None
-
     def on_destroy(self):
         super().on_destroy()
 
     def on_start(self):
-        if self.last_start is None:
-            self.last_start = time.monotonic()
+        timer = self.dependencies.timer
+        if not timer.is_running():
+            timer.start()
         else:
-            self.last_start = None
+            timer.stop()
 
 
 @component("circle_progress", template=None)
