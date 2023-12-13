@@ -104,6 +104,8 @@ class EventList(Div):
                 .join(model.Todo)
                 .switch(model.Event)
                 .join(model.EventType)
+                .order_by(model.Event.time.desc())
+                .limit(15)
                 )
         return data
 
