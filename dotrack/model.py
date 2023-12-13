@@ -94,25 +94,39 @@ class TodoService(Injectable):
             .order_by(Event.time)
         )
 
-        starts = []
-        stops = []
-        for event in events:
-            if event.event_type == EventType.START:
-                starts.append(event)
-            else:
-                stops.append(event)
+        def fold(events):
+            events = iter(events)
+            try:
+                start = None
+                while True:
+                    nxt = next(events)
+                    if nxt.event_type == EventType.START:
+                        if start is not None:
+                            yield start, None
+                        start = nxt
+                    elif nxt.event_type == EventType.STOP:
+                        if start is not None:
+                            assert start.todo_id == nxt.todo_id
+                            assert start.time < nxt.time
+                            yield start, nxt
+                            start = None
+                        else:
+                            continue
 
+            except StopIteration:
+                if start is not None:
+                    yield start, None
+
+        last_time = datetime.datetime.now()
         work_time = datetime.timedelta()
 
-        stops = iter(stops)
-        for start in starts:
-            for stop in stops:
-                if start.time < stop.time and start.todo_id == stop.todo_id:
-                    break
+        for start, stop in reversed(list(fold(events))):
+            if stop is None:
+                duration = last_time - start.time
             else:
-                break
-
-            work_time += stop.time - start.time
+                duration = stop.time - start.time
+            work_time += duration
+            last_time = start.time
 
         return work_time
 
