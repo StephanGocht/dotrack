@@ -10,6 +10,7 @@ import time
 from guiml.injectables import Injectable, injectable, Observable, Subscriber
 
 from dotrack.shared import BASE_DIR
+from dotrack.config import Config
 
 
 class DatabaseManger:
@@ -189,12 +190,15 @@ class Timer(Injectable, Subscriber):
     @dataclass
     class Dependencies(Injectable.Dependencies):
         todo_service: TodoService
+        config: Config
 
     def on_init(self):
         super().on_init()
         self.subscribe('on_selected_changed', self.todo_service)
 
-        self.timer = SimpleTimer(20*60)
+        config = self.config.get().pomodoro
+
+        self.timer = SimpleTimer(config.duration)
         self.selected = None
 
     def on_destroy(self):
