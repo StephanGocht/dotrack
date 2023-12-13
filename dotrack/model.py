@@ -136,6 +136,40 @@ class TodoService(Injectable):
         item.save()
 
 
+class SimpleTimer:
+    def __init__(self, duration):
+        self.duration = duration
+        self.last_start = None
+        self.elapsed = 0
+        self.reset()
+
+    def is_running(self):
+        return self.last_start is not None
+
+    @property
+    def remaining(self):
+        result = self.duration - self.elapsed
+        if self.is_running():
+            result -= time.monotonic() - self.last_start
+        return result
+
+    @property
+    def progress(self):
+        result = max(0, self.remaining) / self.duration
+        return result
+
+    def reset(self):
+        self.last_start = None
+        self.elapsed = 0
+
+    def start(self):
+        self.last_start = time.monotonic()
+
+    def stop(self):
+        self.elapsed += time.monotonic() - self.last_start
+        self.last_start = None
+
+
 @injectable("application")
 class Timer(Injectable, Subscriber):
     @dataclass
@@ -146,33 +180,27 @@ class Timer(Injectable, Subscriber):
         super().on_init()
         self.subscribe('on_selected_changed', self.todo_service)
 
-        self.duration = 10
-        self.last_start = None
+        self.timer = SimpleTimer(20*60)
         self.selected = None
 
     def on_destroy(self):
         super().on_destroy()
         self.cancel_subscriptions()
 
-    @property
-    def progress(self):
-        result = max(0, self.remaining) * 100 / self.duration
-        return result
-
-    @property
-    def remaining(self):
-        duration = self.duration
-        if self.last_start is None:
-            return duration
-        else:
-            return duration - (time.monotonic() - self.last_start)
-
     def on_selected_changed(self, todo):
         self.stop()
         self.selected = todo
 
     def is_running(self):
-        return self.last_start is not None
+        return self.timer.is_running()
+
+    @property
+    def progress(self):
+        return self.timer.progress
+
+    @property
+    def remaining(self):
+        return self.timer.remaining
 
     def is_active(self):
         return self.selected is not None
@@ -181,14 +209,11 @@ class Timer(Injectable, Subscriber):
         if not self.is_active():
             return
 
-        print('start')
-        self.last_start = time.monotonic()
+        self.timer.start()
 
-        selected = self.selected
-
-        if selected is not None:
+        if self.selected is not None:
             Event.create(
-                todo=selected,
+                todo=self.selected,
                 event_type=EventType.START,
                 time=datetime.datetime.now())
 
@@ -196,8 +221,7 @@ class Timer(Injectable, Subscriber):
         if not self.is_active() or not self.is_running():
             return
 
-        print('stop')
-        self.last_start = None
+        self.timer.stop()
 
         selected = self.selected
         if selected is not None:
@@ -205,6 +229,10 @@ class Timer(Injectable, Subscriber):
                 todo=selected,
                 event_type=EventType.STOP,
                 time=datetime.datetime.now())
+
+    def reset(self):
+        self.stop()
+        self.timer.reset()
 
 
 class Todo(peewee.Model):

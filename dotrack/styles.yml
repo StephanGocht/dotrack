@@ -3,7 +3,7 @@ application:
         layout: grid
         width: 1000
         height: 500
-        show_fps: true
+        show_fps: false
 
     .background:
         background:

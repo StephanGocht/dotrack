@@ -6,7 +6,6 @@ import cairocffi as cairo
 
 from guiml.components import Container
 import math
-import time
 
 from dotrack.shared import component
 from dotrack.model import Timer
@@ -20,8 +19,7 @@ class TimerComponent(Container):
 
     @dataclass
     class Properties(Container.Properties):
-        duration: int = 10
-        """Timer duration in seconds"""
+        pass
 
     @property
     def progress(self):
@@ -55,6 +53,10 @@ class TimerComponent(Container):
         else:
             timer.stop()
 
+    def on_reset(self):
+        timer = self.dependencies.timer
+        timer.reset()
+
 
 @component("circle_progress", template=None)
 class CircleProgress(UIComponent):
@@ -84,7 +86,7 @@ class CircleProgress(UIComponent):
 
         with ctx:
             ctx.move_to(center_x, center_y)
-            ctx.arc(center_x, center_y, radius, -math.pi/2, -math.pi/2 + 2 * math.pi / 100 * progress)
+            ctx.arc(center_x, center_y, radius, -math.pi/2, -math.pi/2 + 2 * math.pi * progress)
             pat = cairo.SolidPattern(0, 0.8, 0, 1)
             ctx.set_source(pat)
             ctx.fill()

@@ -64,6 +64,13 @@
                     class="no_select"
                 ></text>
             </button>
+            <button
+                on_click='self.on_reset'>
+                <text
+                    text="Reset"
+                    class="no_select"
+                ></text>
+            </button>
         </div>
     </timer>
 
