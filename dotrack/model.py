@@ -13,7 +13,7 @@ from dotrack.shared import BASE_DIR
 
 
 class DatabaseManger:
-    SAVE_FILE = BASE_DIR / 'dotrack.db'
+    SAVE_FILE = BASE_DIR / '../data/dotrack.db'
 
     def __init__(self):
         self.db = peewee.SqliteDatabase(None)
