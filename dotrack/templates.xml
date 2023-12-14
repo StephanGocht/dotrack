@@ -23,14 +23,24 @@
     </router_outlet>
 
     <todo_view>
-        <todo></todo>
-        <div class="timer_wrap">
-            <div class="timer">
-                <text py_text="f'you worked {self.work_time()}h today.'"></text>
-                <timer></timer>
+        <div class="upper">
+            <todo></todo>
+            <div class="timer_wrap">
+                <div class="timer">
+                    <text py_text="f'you worked {self.work_time()}h today.'"></text>
+                    <timer></timer>
+                </div>
             </div>
         </div>
+        <exp_display class="lower"></exp_display>
     </todo_view>
+
+    <exp_display>
+        <exp_bar></exp_bar>
+        <div class="text">
+            <text py_text="self.text"></text>
+        </div>
+    </exp_display>
 
     <event_list>
         <div class="table" cols="10" py_rows="len(self.events)">
@@ -83,9 +93,9 @@
                 class="input"
                 bind_text="self.text"
                 on_submit="self.input_submit"></input>
-            <button id="add_button" on_click="self.add_clicked">
+<!--             <button id="add_button" on_click="self.add_clicked">
                 <text id="button_text" class="no_select" text="add"></text>
-            </button>
+            </button> -->
         </div>
     </todo>
 

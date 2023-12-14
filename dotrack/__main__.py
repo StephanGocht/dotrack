@@ -1,4 +1,4 @@
-from guiml.components import Component, Div
+from guiml.components import Component, Div, UIComponent
 from guiml.core import run
 
 from dataclasses import dataclass, field
@@ -15,6 +15,8 @@ from dotrack.model import TodoService
 import dotrack.model as model
 
 from dotrack.shared import component, res, BASE_DIR
+
+import cairocffi as cairo
 
 
 @component("application")
@@ -85,6 +87,101 @@ class TodoView(Div):
         hours, remainder = divmod(timedelta.total_seconds(), 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours):02}:{int(minutes):02}"
+
+
+@dataclass
+class Color:
+    """ """
+
+    red: float = 0.
+    green: float = 0.
+    blue: float = 0.
+    alpha: float = 0.
+
+
+@component(name="exp_display")
+class ExpDisplay(Div):
+
+    @property
+    def text(self):
+        return '400/4000 (10%)'
+
+
+@component(name="exp_bar", template=None)
+class ExpBar(UIComponent):
+    @dataclass
+    class Dependencies(UIComponent.Dependencies):
+        pass
+
+    @dataclass
+    class Properties(UIComponent.Properties):
+        progress: float = 0.3
+        background: Color = field(default_factory=Color)
+        border: Color = field(default_factory=Color)
+        fill: Color = field(default_factory=Color)
+        fill_darken: float = 0.
+
+    def push_rectangle(self, ctx, progress):
+        position = self.properties.position
+        ctx.rectangle(position.left + 0.5, position.top + 0.5,
+                      (position.width - 1) * progress, position.height - 1)
+
+    @property
+    def width(self):
+        return 100
+
+    @property
+    def height(self):
+        return 5
+
+    def on_draw(self, ctx):
+        with ctx:
+            position = self.properties.position
+
+            self.push_rectangle(ctx, 1.0)
+            color = self.properties.background
+            pat = cairo.SolidPattern(color.red, color.green, color.blue,
+                                     color.alpha)
+            ctx.set_source(pat)
+            ctx.fill()
+
+            self.push_rectangle(ctx, self.properties.progress)
+            color = self.properties.fill
+
+            gradient = cairo.LinearGradient(position.left, position.top,
+                                            position.left, position.bottom)
+
+            gradient.add_color_stop_rgb(0., color.red, color.green, color.blue)
+            darken = self.properties.fill_darken
+            gradient.add_color_stop_rgb(1., color.red * darken,
+                                        color.green * darken,
+                                        color.blue * darken)
+
+            ctx.set_source(gradient)
+            ctx.fill()
+
+            ctx.set_line_width(1)
+            color = self.properties.border
+            pat = cairo.SolidPattern(color.red, color.green, color.blue,
+                                     color.alpha)
+            ctx.set_source(pat)
+
+            self.push_rectangle(ctx, 1.0)
+            ctx.stroke()
+
+            num_ticks = 20
+            tick_size = position.width // num_ticks
+            pos = position.left + 0.5
+            top = position.top
+            bottom = position.bottom
+
+            for i in range(1, num_ticks):
+                pos += tick_size
+                ctx.move_to(pos, top)
+                ctx.line_to(pos, bottom)
+                ctx.stroke()
+
+        super().on_draw(ctx)
 
 
 @component(name="event_list")

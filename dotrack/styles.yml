@@ -33,13 +33,22 @@ router_outlet:
 todo_view:
     todo_view:
         layout: stack
+        direction: vertical
+
+    .upper:
+        layout: stack
         direction: horizontal
+        stretch: 1
+        gravity: stretch
 
         padding:
             top: 10
             left: 10
             right: 10
             bottom: 10
+
+    .lower:
+        gravity: stretch
 
     todo:
         gravity: stretch
@@ -49,6 +58,56 @@ todo_view:
         padding:
             left: 20
             right: 10
+
+exp_display:
+    exp_display:
+        layout: align
+
+        padding:
+            top: 10
+            left: 10
+            right: 10
+            bottom: 10
+
+    .text:
+        margin:
+            top: 2.
+            bottom: 2.
+
+        padding:
+            left: 5.
+            right: 5.
+
+        background:
+            red: 1.
+            green: 1.
+            blue: 1.
+            alpha: 0.5
+
+    exp_bar:
+        stretch: both
+
+        progress: 0.5
+
+        background:
+            red: 0.8
+            green: 0.8
+            blue: 0.8
+            alpha: 1.
+
+        fill:
+            red: 0.6
+            green: 0.
+            blue: 0.6
+            alpha: 1.
+
+        fill_darken: 0.2
+
+        border:
+            red: 0.5
+            green: 0.5
+            blue: 0.5
+            alpha: 1
 
 event_list:
     .row:
