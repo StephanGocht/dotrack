@@ -94,6 +94,7 @@ class TodoService(Injectable):
         db.connect()
 
         self.on_selected_changed = Observable()
+        self.on_todo_toggle = Observable()
 
         self._selected = None
 
@@ -193,6 +194,16 @@ class TodoService(Injectable):
             item.done = None
         item.save()
 
+        self.on_todo_toggle(item)
+
+
+exp_table = {
+    'raw_exp': {
+        'toggle': 100
+    }
+}
+
+
 @injectable("application")
 class ExpService(Injectable, Subscriber):
     @dataclass
@@ -206,7 +217,20 @@ class ExpService(Injectable, Subscriber):
         self.cancel_subscriptions()
 
     def on_todo_toggle(self, item):
-        pass
+        if item.done:
+            ExpEvent.create(
+                exp=exp_table['raw_exp']['toggle'],
+                event_type=ExpType.DONE,
+                time=datetime.datetime.now(),
+                todo=item
+            )
+        else:
+            (ExpEvent
+                .delete()
+                .where(ExpEvent.todo == item)
+                .where(ExpEvent.event_type == ExpType.DONE)
+                .execute())
+
 
 class SimpleTimer:
     def __init__(self, duration):
@@ -321,6 +345,45 @@ class Todo(peewee.Model):
     def __init__(self, **kwargs):
         self.selected = False
         super().__init__(**kwargs)
+
+
+class ExpType(peewee.Model):
+    exp_type_id = peewee.AutoField(primary_key=True)
+    name = peewee.TextField()
+
+    class Meta:
+        database = db()
+
+    class Values(Enum):
+        DONE = 'done'
+        """Todo done"""
+
+        RESET = 'reset'
+        """pomodoro timer reset"""
+
+    @classmethod
+    def init_events(cls):
+        events = set((x.value for x in iter(cls.Values)))
+
+        for event_type in cls.select():
+            if event_type.name in events:
+                setattr(cls, event_type.name.upper(), event_type)
+                events.discard(event_type.name)
+
+        for event_name in events:
+            event_type = cls.create(name=event_name)
+            setattr(cls, event_type.name.upper(), event_type)
+
+
+class ExpEvent(peewee.Model):
+    exp_event_id = peewee.AutoField(primary_key=True)
+    exp = peewee.IntegerField()
+    event_type = peewee.ForeignKeyField(ExpType)
+    time = peewee.DateTimeField()
+    todo = peewee.ForeignKeyField(Todo, null=True, backref='exp_events')
+
+    class Meta:
+        database = db()
 
 
 class EventType(peewee.Model):
