@@ -5,11 +5,144 @@ import datetime
 
 import peewee
 import time
+import re
 
 from guiml.injectables import Injectable, injectable, Observable, Subscriber
 
 from dotrack.shared import BASE_DIR
 from dotrack.config import Config
+
+
+class EvolveField:
+    def __init__(self, schema=None, target_schema=None):
+        self.schema = schema
+        self.target_schema = target_schema
+
+
+class EvolveTable:
+    def __init__(self, model: peewee.Model):
+        self.model = model
+        self.name = model._meta.table_name
+        self.schema = None
+        self.target_schema = None
+        self.determine_target_schema()
+
+    def determine_target_schema(self):
+        query = self.model._schema._create_table(safe=False)
+        ctx = self.model._meta.database.get_sql_context()
+        sql, params = ctx.sql(query).query()
+        self.target_schema = sql
+
+    def needs_change(self):
+        return self.schema != self.target_schema
+
+    def iter_fields(self, sql):
+        start = f'CREATE TABLE "{self.name}" ('
+        end = ')'
+        sql = sql.strip()
+        assert sql.startswith(start) and sql.endswith(end)
+
+        sql = sql[len(start):-len(end)]
+        for text in sql.split(','):
+            text = text.strip()
+
+            # after splitting, we will either have a column def or a table
+            # constraint, constraints start with a keyword, so everything
+            # starting with " will be a column def, see also
+            # https://www.sqlite.org/lang_createtable.html
+            match = re.match(r'^"([^"]+)"', text)
+            if match:
+                yield match.group(1), text
+
+    def check_fields(self):
+        actions = []
+
+        fields = dict()
+        for field, schema in self.iter_fields(self.schema):
+            fields[field] = EvolveField(schema=schema)
+
+        for field, schema in self.iter_fields(self.target_schema):
+            fields.setdefault(field, EvolveField()).target_schema = schema
+
+        for name, field in fields.items():
+            if field.schema is None:
+                sql = f'ALTER TABLE "{self.name}" ADD COLUMN {field.target_schema};'
+                print(sql)
+                db = self.model._meta.database
+
+                def add_column(db=db, sql=sql):
+                    db.execute_sql(sql)
+
+                actions.append(add_column)
+
+            # # Dropping columns may not be supported by your sqlite version
+            # if field.target_schema is None:
+            #     sql = f'ALTER TABLE "{self.name}" DROP COLUMN "{name}";'
+            #     print(sql)
+            #     db = self.model._meta.database
+
+            #     def add_column(db=db, sql=sql):
+            #         db.execute_sql(sql)
+
+            #     actions.append(add_column)
+
+        return actions
+
+
+class Evolve:
+    def __init__(self, db, models, require_confirm=True):
+        self.db = db
+        self.models = models
+        self.require_confirm = require_confirm
+        self.load_tables()
+
+        self.evolution_steps = list()
+
+    def load_tables(self):
+        self.tables = dict()
+        for model in self.models:
+            self.tables[model._meta.table_name] = EvolveTable(model)
+
+        tables = SqliteSchema.select().where(SqliteSchema.type_ == 'table')
+        for table in tables:
+            self.tables[table.tbl_name].schema = table.sql
+
+    def check_create_tables(self):
+        tables_to_create = list()
+        for key, value in self.tables.items():
+            if value.schema is None:
+                self.tables_to_create.append(value.model)
+
+        if tables_to_create:
+            def create_tables():
+                self.db.create_tables(tables_to_create)
+
+            self.evolution_steps.append(create_tables)
+            names = [model._meta.table_name for model in self.tables_to_create]
+            print(f'create tables: {", ".join(names)}')
+
+    def check_fields(self):
+        for name, table in self.tables.items():
+            if table.needs_change():
+                self.evolution_steps.extend(table.check_fields())
+
+    def user_confirm(self):
+        if input("Apply modification y/n? ") == "y":
+            return True
+        else:
+            return False
+
+    def evolve(self):
+        self.check_create_tables()
+        self.check_fields()
+
+        if self.evolution_steps:
+            if not self.require_confirm or self.user_confirm():
+                for step in self.evolution_steps:
+                    step()
+            else:
+                print('Exiting, database not up to date.')
+                exit(0)
 
 
 class DatabaseManger:
@@ -22,44 +155,14 @@ class DatabaseManger:
         exists = self.SAVE_FILE.exists()
         self.db.init(str(self.SAVE_FILE))
         self.db.connect()
-        self.evolve(exists)
+        evolve = Evolve(self.db, self.models(), require_confirm=exists)
+        evolve.evolve()
 
         EventType.init_events()
         ExpType.init_events()
 
     def models(self):
         return [Todo, EventType, Event, ExpType, ExpEvent]
-
-    def evolve(self, exists):
-        modify = False
-        models = dict()
-        for model in self.models():
-            models[model._meta.table_name] = {
-                'model': model,
-                'schema': None
-            }
-
-        tables = SqliteSchema.select().where(SqliteSchema.type_ == 'table')
-        for table in tables:
-            models[table.tbl_name]['schema'] = table.sql
-
-        to_create = list()
-        for key, value in models.items():
-            if value['schema'] is None:
-                to_create.append(value['model'])
-
-        if to_create:
-            modify = True
-            names = [model._meta.table_name for model in to_create]
-            print(f'create tables: {", ".join(names)}')
-
-        if modify:
-            if not exists or input("Apply modification y/n? ") == "y":
-                if to_create:
-                    self.db.create_tables(to_create)
-            else:
-                print('Exiting, database not up to date.')
-                exit(0)
 
     def __call__(self):
         return self.db
@@ -116,6 +219,7 @@ class TodoService(Injectable):
                         - datetime.timedelta(minutes=1))
         return (Todo
                 .select()
+                .where(~Todo.deleted)
                 .where(
                     (Todo.done.is_null())
                     | (Todo.done > display_time))
@@ -185,7 +289,8 @@ class TodoService(Injectable):
         Todo.create(text=text)
 
     def remove(self, item):
-        item.delete_instance()
+        item.deleted = True
+        item.save()
 
     def toggle_done(self, item):
         if item.done is None:
@@ -372,6 +477,8 @@ class Todo(peewee.Model):
     todo_id = peewee.AutoField(primary_key=True)
     text = peewee.TextField()
     done = peewee.DateTimeField(null=True)
+    # todo db reset: make non nullable
+    deleted = peewee.BooleanField(default=False, null=True)
 
     class Meta:
         database = db()
