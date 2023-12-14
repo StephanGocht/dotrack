@@ -437,8 +437,7 @@ class ExpService(Injectable, Subscriber):
     def progress(self):
         return self.exp / self.next_level
 
-    @property
-    def exp(self):
+    def raw_exp(self):
         value = (
             ExpEvent
             .select(peewee.fn.Sum(ExpEvent.exp))
@@ -448,6 +447,14 @@ class ExpService(Injectable, Subscriber):
             return 0
         else:
             return value
+
+    @property
+    def exp(self):
+        return self.raw_exp() % exp_table['exp_per_level']
+
+    @property
+    def level(self):
+        return self.raw_exp() // exp_table['exp_per_level']
 
     def on_timer_reset(self, remaining):
         if remaining < 0:

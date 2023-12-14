@@ -114,7 +114,8 @@ class ExpDisplay(Div):
         exp = self.dependencies.exp_service
 
         return (f'{exp.exp}/{exp.next_level} '
-                f'({int(exp.progress*100)}%)')
+                f'({int(exp.progress*100)}%) '
+                f'Level: {exp.level}')
 
 
 @component(name="exp_bar", template=None)
@@ -130,6 +131,8 @@ class ExpBar(UIComponent):
         border: Color = field(default_factory=Color)
         fill: Color = field(default_factory=Color)
         fill_darken: float = 0.
+        width: int = 100
+        height: int = 20
 
     def push_rectangle(self, ctx, progress):
         position = self.properties.position
@@ -138,11 +141,11 @@ class ExpBar(UIComponent):
 
     @property
     def width(self):
-        return 100
+        return self.properties.width
 
     @property
     def height(self):
-        return 5
+        return self.properties.height
 
     def on_draw(self, ctx):
         with ctx:

@@ -37,7 +37,7 @@
 
     <exp_display>
         <exp_bar py_progress="self.progress"></exp_bar>
-        <div class="text">
+        <div control="if self.STYLE_CLASS_HOVER in self.style_classes" class="text">
             <text py_text="self.text"></text>
         </div>
     </exp_display>
