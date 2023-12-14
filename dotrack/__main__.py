@@ -101,10 +101,20 @@ class Color:
 
 @component(name="exp_display")
 class ExpDisplay(Div):
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        exp_service: model.ExpService = None
+
+    @property
+    def progress(self):
+        return self.dependencies.exp_service.progress
 
     @property
     def text(self):
-        return '400/4000 (10%)'
+        exp = self.dependencies.exp_service
+
+        return (f'{exp.exp}/{exp.next_level} '
+                f'({int(exp.progress*100)}%)')
 
 
 @component(name="exp_bar", template=None)

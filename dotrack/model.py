@@ -200,7 +200,8 @@ class TodoService(Injectable):
 exp_table = {
     'raw_exp': {
         'toggle': 100
-    }
+    },
+    'exp_per_level': 1000
 }
 
 
@@ -215,6 +216,26 @@ class ExpService(Injectable, Subscriber):
 
     def on_destroy(self):
         self.cancel_subscriptions()
+
+    @property
+    def next_level(self):
+        return exp_table['exp_per_level']
+
+    @property
+    def progress(self):
+        return self.exp / self.next_level
+
+    @property
+    def exp(self):
+        value = (
+            ExpEvent
+            .select(peewee.fn.Sum(ExpEvent.exp))
+            .scalar()
+        )
+        if value is None:
+            return 0
+        else:
+            return value
 
     def on_todo_toggle(self, item):
         if item.done:
