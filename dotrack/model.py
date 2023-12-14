@@ -197,62 +197,6 @@ class TodoService(Injectable):
         self.on_todo_toggle(item)
 
 
-exp_table = {
-    'raw_exp': {
-        'toggle': 100
-    },
-    'exp_per_level': 1000
-}
-
-
-@injectable("application")
-class ExpService(Injectable, Subscriber):
-    @dataclass
-    class Dependencies(Injectable.Dependencies):
-        todo: TodoService
-
-    def on_init(self):
-        self.subscribe('on_todo_toggle', self.todo)
-
-    def on_destroy(self):
-        self.cancel_subscriptions()
-
-    @property
-    def next_level(self):
-        return exp_table['exp_per_level']
-
-    @property
-    def progress(self):
-        return self.exp / self.next_level
-
-    @property
-    def exp(self):
-        value = (
-            ExpEvent
-            .select(peewee.fn.Sum(ExpEvent.exp))
-            .scalar()
-        )
-        if value is None:
-            return 0
-        else:
-            return value
-
-    def on_todo_toggle(self, item):
-        if item.done:
-            ExpEvent.create(
-                exp=exp_table['raw_exp']['toggle'],
-                event_type=ExpType.DONE,
-                time=datetime.datetime.now(),
-                todo=item
-            )
-        else:
-            (ExpEvent
-                .delete()
-                .where(ExpEvent.todo == item)
-                .where(ExpEvent.event_type == ExpType.DONE)
-                .execute())
-
-
 class SimpleTimer:
     def __init__(self, duration):
         self.duration = duration
@@ -300,6 +244,7 @@ class Timer(Injectable, Subscriber):
 
         config = self.config.get().pomodoro
 
+        self.on_reset = Observable()
         self.timer = SimpleTimer(config.duration)
         self.selected = None
 
@@ -352,7 +297,75 @@ class Timer(Injectable, Subscriber):
 
     def reset(self):
         self.stop()
+        self.on_reset(self.remaining)
         self.timer.reset()
+
+
+exp_table = {
+    'raw_exp': {
+        'toggle': 100,
+        'reset': 100
+    },
+    'exp_per_level': 1000
+}
+
+
+@injectable("application")
+class ExpService(Injectable, Subscriber):
+    @dataclass
+    class Dependencies(Injectable.Dependencies):
+        todo: TodoService
+        timer: Timer
+
+    def on_init(self):
+        self.subscribe('on_todo_toggle', self.todo)
+        self.subscribe('on_reset', self.timer, self.on_timer_reset)
+
+    def on_destroy(self):
+        self.cancel_subscriptions()
+
+    @property
+    def next_level(self):
+        return exp_table['exp_per_level']
+
+    @property
+    def progress(self):
+        return self.exp / self.next_level
+
+    @property
+    def exp(self):
+        value = (
+            ExpEvent
+            .select(peewee.fn.Sum(ExpEvent.exp))
+            .scalar()
+        )
+        if value is None:
+            return 0
+        else:
+            return value
+
+    def on_timer_reset(self, remaining):
+        if remaining < 0:
+            ExpEvent.create(
+                exp=exp_table['raw_exp']['reset'],
+                event_type=ExpType.RESET,
+                time=datetime.datetime.now(),
+            )
+
+    def on_todo_toggle(self, item):
+        if item.done:
+            ExpEvent.create(
+                exp=exp_table['raw_exp']['toggle'],
+                event_type=ExpType.DONE,
+                time=datetime.datetime.now(),
+                todo=item
+            )
+        else:
+            (ExpEvent
+                .delete()
+                .where(ExpEvent.todo == item)
+                .where(ExpEvent.event_type == ExpType.DONE)
+                .execute())
 
 
 class Todo(peewee.Model):
