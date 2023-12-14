@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from enum import Enum
 
 import datetime
-import itertools
 
 import peewee
 import time
@@ -23,19 +22,63 @@ class DatabaseManger:
         exists = self.SAVE_FILE.exists()
         self.db.init(str(self.SAVE_FILE))
         self.db.connect()
-        if not exists:
-            self.create_database()
+        self.evolve(exists)
 
         EventType.init_events()
+        ExpType.init_events()
 
-    def create_database(self):
-        self.db.create_tables([Todo, EventType, Event])
+    def models(self):
+        return [Todo, EventType, Event, ExpType, ExpEvent]
+
+    def evolve(self, exists):
+        modify = False
+        models = dict()
+        for model in self.models():
+            models[model._meta.table_name] = {
+                'model': model,
+                'schema': None
+            }
+
+        tables = SqliteSchema.select().where(SqliteSchema.type_ == 'table')
+        for table in tables:
+            models[table.tbl_name]['schema'] = table.sql
+
+        to_create = list()
+        for key, value in models.items():
+            if value['schema'] is None:
+                to_create.append(value['model'])
+
+        if to_create:
+            modify = True
+            names = [model._meta.table_name for model in to_create]
+            print(f'create tables: {", ".join(names)}')
+
+        if modify:
+            if not exists or input("Apply modification y/n? ") == "y":
+                if to_create:
+                    self.db.create_tables(to_create)
+            else:
+                print('Exiting, database not up to date.')
+                exit(0)
 
     def __call__(self):
         return self.db
 
 
 db = DatabaseManger()
+
+
+class SqliteSchema(peewee.Model):
+    type_ = peewee.TextField(column_name='type')
+    name = peewee.TextField()
+    tbl_name = peewee.TextField()
+    rootpage = peewee.IntegerField()
+    sql = peewee.TextField()
+
+    class Meta:
+        database = db()
+        table_name = 'sqlite_schema'
+        primary_key = False
 
 
 @injectable("application")
@@ -150,6 +193,20 @@ class TodoService(Injectable):
             item.done = None
         item.save()
 
+@injectable("application")
+class ExpService(Injectable, Subscriber):
+    @dataclass
+    class Dependencies(Injectable.Dependencies):
+        todo: TodoService
+
+    def on_init(self):
+        self.subscribe('on_todo_toggle', self.todo)
+
+    def on_destroy(self):
+        self.cancel_subscriptions()
+
+    def on_todo_toggle(self, item):
+        pass
 
 class SimpleTimer:
     def __init__(self, duration):
