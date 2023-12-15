@@ -188,7 +188,7 @@ class SqliteSchema(peewee.Model):
 class TodoService(Injectable):
     @dataclass
     class Dependencies(Injectable.Dependencies):
-        pass
+        config: Config
 
     def on_init(self):
         super().on_init()
@@ -200,6 +200,10 @@ class TodoService(Injectable):
         self.on_todo_toggle = Observable()
 
         self._selected = None
+
+    @property
+    def task_groups(self):
+        return self.dependencies.config.task_groups
 
     @property
     def selected(self):
@@ -482,6 +486,35 @@ class ExpService(Injectable, Subscriber):
                 .execute())
 
 
+def get_or_create_by_name(names, model, delete):
+    names = set(names)
+    result = list()
+
+    for entry in model.select():
+        if entry.name in names:
+            result.append(entry)
+            names.discard(entry.name)
+
+    if delete:
+        for name in names:
+            entry = model.create(name=name)
+            result.append(entry)
+
+    return result
+
+
+class TaskGroup(peewee.Model):
+    task_group_id = peewee.AutoField(primary_key=True)
+    name = peewee.TextField()
+
+    class Meta:
+        database = db()
+
+    @classmethod
+    def get_groups(cls, names):
+        return get_or_create_by_name(names, cls, delete=False)
+
+
 class Todo(peewee.Model):
     todo_id = peewee.AutoField(primary_key=True)
     text = peewee.TextField()
@@ -513,16 +546,10 @@ class ExpType(peewee.Model):
 
     @classmethod
     def init_events(cls):
-        events = set((x.value for x in iter(cls.Values)))
-
-        for event_type in cls.select():
-            if event_type.name in events:
-                setattr(cls, event_type.name.upper(), event_type)
-                events.discard(event_type.name)
-
-        for event_name in events:
-            event_type = cls.create(name=event_name)
-            setattr(cls, event_type.name.upper(), event_type)
+        names = (x.value for x in iter(cls.Values))
+        entries = get_or_create_by_name(names, cls, delete=True)
+        for exp_type in entries:
+            setattr(cls, exp_type.name.upper(), exp_type)
 
 
 class ExpEvent(peewee.Model):
@@ -549,15 +576,9 @@ class EventType(peewee.Model):
 
     @classmethod
     def init_events(cls):
-        events = set((x.value for x in iter(cls.Values)))
-
-        for event_type in cls.select():
-            if event_type.name in events:
-                setattr(cls, event_type.name.upper(), event_type)
-                events.discard(event_type.name)
-
-        for event_name in events:
-            event_type = cls.create(name=event_name)
+        names = (x.value for x in iter(cls.Values))
+        entries = get_or_create_by_name(names, cls, delete=True)
+        for event_type in entries:
             setattr(cls, event_type.name.upper(), event_type)
 
 
