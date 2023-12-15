@@ -88,7 +88,14 @@
         <todolist id="todolist" py_todos="self.todos"></todolist>
 
         <div class="footer">
-            <text py_text="f'{self.num_open_todos}/{len(self.todos)} todos left'"></text>
+            <div class="task_groups">
+                <div
+                    control="for group in ['guiml','thepornai','foolserand','filuta','orga']"
+                    class="task_group">
+                    <text py_text="group" class="no_select"/>
+                </div>
+            </div>
+            <!-- <text py_text="f'{self.num_open_todos}/{len(self.todos)} todos left'"></text> -->
             <input
                 class="input"
                 bind_text="self.text"
