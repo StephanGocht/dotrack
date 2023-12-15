@@ -360,6 +360,8 @@ class Timer(Injectable, Subscriber):
     def on_selected_changed(self, todo):
         self.stop()
         self.selected = todo
+        if self.selected is not None:
+            self.start()
 
     def is_running(self):
         return self.timer.is_running()
@@ -454,7 +456,7 @@ class ExpService(Injectable, Subscriber):
 
     @property
     def level(self):
-        return self.raw_exp() // exp_table['exp_per_level']
+        return self.raw_exp() // exp_table['exp_per_level'] + 1
 
     def on_timer_reset(self, remaining):
         if remaining < 0:
