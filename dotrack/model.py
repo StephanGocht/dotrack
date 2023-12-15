@@ -34,7 +34,9 @@ class EvolveTable:
         self.target_schema = sql
 
     def needs_change(self):
-        return self.schema != self.target_schema
+        return (self.schema
+                and self.target_schema
+                and self.schema != self.target_schema)
 
     def iter_fields(self, sql):
         start = f'CREATE TABLE "{self.name}" ('
@@ -111,14 +113,14 @@ class Evolve:
         tables_to_create = list()
         for key, value in self.tables.items():
             if value.schema is None:
-                self.tables_to_create.append(value.model)
+                tables_to_create.append(value.model)
 
         if tables_to_create:
             def create_tables():
                 self.db.create_tables(tables_to_create)
 
             self.evolution_steps.append(create_tables)
-            names = [model._meta.table_name for model in self.tables_to_create]
+            names = [model._meta.table_name for model in tables_to_create]
             print(f'create tables: {", ".join(names)}')
 
     def check_fields(self):
@@ -162,7 +164,7 @@ class DatabaseManger:
         ExpType.init_events()
 
     def models(self):
-        return [Todo, EventType, Event, ExpType, ExpEvent]
+        return [Todo, EventType, Event, ExpType, ExpEvent, TaskGroup]
 
     def __call__(self):
         return self.db
@@ -201,9 +203,18 @@ class TodoService(Injectable):
 
         self._selected = None
 
-    @property
-    def task_groups(self):
-        return self.dependencies.config.task_groups
+        groups = self.config.config.task_groups
+        self.task_groups = TaskGroup.get_groups(groups)
+
+        self.selected_group = None
+        self.select_group(self.task_groups[0])
+
+    def select_group(self, group):
+        if self.selected_group is not None:
+            self.selected_group.selected = False
+
+        group.selected = True
+        self.selected_group = group
 
     @property
     def selected(self):
@@ -227,6 +238,7 @@ class TodoService(Injectable):
                 .where(
                     (Todo.done.is_null())
                     | (Todo.done > display_time))
+                .where(Todo.group == self.selected_group)
                 )
 
     def select(self, item):
@@ -290,7 +302,7 @@ class TodoService(Injectable):
             return self.selected.todo_id == item.todo_id
 
     def add(self, text):
-        Todo.create(text=text)
+        Todo.create(text=text, group=self.selected_group)
 
     def remove(self, item):
         item.deleted = True
@@ -486,7 +498,7 @@ class ExpService(Injectable, Subscriber):
                 .execute())
 
 
-def get_or_create_by_name(names, model, delete):
+def get_or_create_by_name(names, model):
     names = set(names)
     result = list()
 
@@ -495,10 +507,9 @@ def get_or_create_by_name(names, model, delete):
             result.append(entry)
             names.discard(entry.name)
 
-    if delete:
-        for name in names:
-            entry = model.create(name=name)
-            result.append(entry)
+    for name in names:
+        entry = model.create(name=name)
+        result.append(entry)
 
     return result
 
@@ -510,9 +521,13 @@ class TaskGroup(peewee.Model):
     class Meta:
         database = db()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.selected = False
+
     @classmethod
     def get_groups(cls, names):
-        return get_or_create_by_name(names, cls, delete=False)
+        return get_or_create_by_name(names, cls)
 
 
 class Todo(peewee.Model):
@@ -521,6 +536,8 @@ class Todo(peewee.Model):
     done = peewee.DateTimeField(null=True)
     # todo db reset: make non nullable
     deleted = peewee.BooleanField(default=False, null=True)
+    # todo db reset: make non nullable
+    group = peewee.ForeignKeyField(TaskGroup, null=True)
 
     class Meta:
         database = db()
@@ -547,7 +564,7 @@ class ExpType(peewee.Model):
     @classmethod
     def init_events(cls):
         names = (x.value for x in iter(cls.Values))
-        entries = get_or_create_by_name(names, cls, delete=True)
+        entries = get_or_create_by_name(names, cls)
         for exp_type in entries:
             setattr(cls, exp_type.name.upper(), exp_type)
 
@@ -577,7 +594,7 @@ class EventType(peewee.Model):
     @classmethod
     def init_events(cls):
         names = (x.value for x in iter(cls.Values))
-        entries = get_or_create_by_name(names, cls, delete=True)
+        entries = get_or_create_by_name(names, cls)
         for event_type in entries:
             setattr(cls, event_type.name.upper(), event_type)
 

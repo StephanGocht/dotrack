@@ -1,5 +1,7 @@
 import yaml
 import dataclasses
+import typing
+
 
 from dataclasses import dataclass, field
 from dotrack.shared import DATA_DIR
@@ -14,11 +16,18 @@ class PomodoroTimer:
 @dataclass
 class ConfigRoot:
     pomodoro: PomodoroTimer = field(default_factory=PomodoroTimer)
+    task_groups: list[str] = field(default_factory=list)
 
 
 def structure(data, data_type):
+    origin = typing.get_origin(data_type)
+    type_args = typing.get_args(data_type)
     if data is None:
         return None
+    elif origin is not None and isinstance(data, origin):
+        if isinstance(data, list):
+            data = [structure(x, type_args[0]) for x in data]
+            return data
     elif isinstance(data, data_type):
         return data
     elif dataclasses.is_dataclass(data_type):

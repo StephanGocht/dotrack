@@ -263,6 +263,13 @@ class TodoComponent(Container):
         return self.dependencies.todo_service.todos
 
     @property
+    def task_groups(self):
+        return self.dependencies.todo_service.task_groups
+
+    def select_group(self, group):
+        return self.dependencies.todo_service.select_group(group)
+
+    @property
     def num_open_todos(self):
         return sum((1 for todo in self.todos if not todo.done))
 

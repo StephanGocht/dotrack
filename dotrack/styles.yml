@@ -11,13 +11,13 @@ colors:
         blue: 1
         alpha: 1.
 
-    select: &select
+    select: &selected
         red: 0.3
         green: 0.8
         blue: 0.8
         alpha: 1.
 
-    select_highlight: &select_highlight
+    select_highlight: &highlight_selected
         red: 0.2
         green: 1.
         blue: 1.
@@ -207,6 +207,8 @@ todo:
         direction: horizontal
 
     .task_group:
+        mouse_coursor: hand
+
         margin:
             left: 5
             right: 5
@@ -227,6 +229,12 @@ todo:
 
     .task_group.hover:
         background: *highlight
+
+    .task_group.selected:
+        background: *selected
+
+    .task_group.selected.hover:
+        background: *highlight_selected
 
 
 todolist:
@@ -257,10 +265,10 @@ todo_item:
         background: *highlight
 
     .todotext_wrap.selected:
-        background: *select
+        background: *selected
 
     .todotext_wrap.selected.hover:
-        background: *select_highlight
+        background: *highlight_selected
 
     .todotext:
         alignment: left

@@ -90,9 +90,11 @@
         <div class="footer">
             <div class="task_groups">
                 <div
-                    control="for group in ['guiml','thepornai','foolserand','filuta','orga']"
-                    class="task_group">
-                    <text py_text="group" class="no_select"/>
+                    control="for group in self.task_groups"
+                    class="task_group"
+                    class_selected="group.selected"
+                    on_click="lambda self=self, group=group: self.select_group(group)">
+                    <text py_text="group.name" class="no_select"/>
                 </div>
             </div>
             <!-- <text py_text="f'{self.num_open_todos}/{len(self.todos)} todos left'"></text> -->
