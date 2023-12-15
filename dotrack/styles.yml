@@ -1,3 +1,29 @@
+colors:
+    background: &bg_color
+        red: 0.93
+        green: 0.93
+        blue: 0.93
+        alpha: 1.
+
+    highlight: &highlight
+        red: 1
+        green: 1
+        blue: 1
+        alpha: 1.
+
+    select: &select
+        red: 0.3
+        green: 0.8
+        blue: 0.8
+        alpha: 1.
+
+    select_highlight: &select_highlight
+        red: 0.2
+        green: 1.
+        blue: 1.
+        alpha: 1.
+
+
 application:
     window:
         layout: grid
@@ -6,11 +32,7 @@ application:
         show_fps: false
 
     .background:
-        background:
-            red: 0.9
-            green: 0.9
-            blue: 0.9
-            alpha: 1.
+        background: *bg_color
 
         layout: stack
         direction: horizontal
@@ -180,6 +202,33 @@ todo:
     $button_text:
         alignment: center
 
+    .task_groups:
+        layout: stack
+        direction: horizontal
+
+    .task_group:
+        margin:
+            left: 5
+            right: 5
+            top: 0
+            bottom: 5
+
+        padding:
+            left: 4
+            right: 4
+            top: 2
+            bottom: 2
+
+        background:
+            red: 0.85
+            green: 0.85
+            blue: 0.85
+            alpha: 1
+
+    .task_group.hover:
+        background: *highlight
+
+
 todolist:
     todolist:
         layout: grid
@@ -205,25 +254,13 @@ todo_item:
             right: 5
 
     .todotext_wrap.hover:
-        background:
-            red: 1.
-            green: 1.
-            blue: 1.
-            alpha: 1.
+        background: *highlight
 
     .todotext_wrap.selected:
-        background:
-            red: 0.5
-            green: 0.5
-            blue: 1.
-            alpha: 1.
+        background: *select
 
     .todotext_wrap.selected.hover:
-        background:
-            red: 0.8
-            green: 0.8
-            blue: 1.
-            alpha: 1.
+        background: *select_highlight
 
     .todotext:
         alignment: left
