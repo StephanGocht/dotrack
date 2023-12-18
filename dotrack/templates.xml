@@ -45,7 +45,8 @@
     <event_list>
         <div class="table" cols="10" py_rows="len(self.events)">
             <div class="row" control="for i, event in enumerate(self.events)">
-                <text col="0" colspan="8" py_row="i" py_text="event.todo.text"></text>
+                <text control="if event.todo is not None"
+                      col="0" colspan="8" py_row="i" py_text="event.todo.text"></text>
                 <text col="7" colspan="1" py_row="i" py_text="event.event_type.name"></text>
                 <text col="8" colspan="2" py_row="i" py_text="self.format_time(event)"></text>
             </div>

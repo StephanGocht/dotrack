@@ -238,6 +238,11 @@ class TodoService(Injectable):
                     default=None)
         self.selected = task
 
+        Event.create(
+            todo=None,
+            event_type=EventType.APP_START,
+            time=datetime.datetime.now())
+
     def select_group(self, group):
         if self.selected_group is not None:
             self.selected_group.selected = False
@@ -256,7 +261,16 @@ class TodoService(Injectable):
 
     def on_destroy(self):
         self.save[TodoServiceState].selected_group = self.selected_group.name
-        self.save[TodoServiceState].selected_todo = self.selected.todo_id
+        if self.selected is not None:
+            self.save[TodoServiceState].selected_todo = self.selected.todo_id
+        else:
+            self.save[TodoServiceState].selected_todo = None
+
+        Event.create(
+            todo=None,
+            event_type=EventType.APP_STOP,
+            time=datetime.datetime.now())
+
         super().on_destroy()
 
     @property
@@ -578,10 +592,8 @@ class Todo(peewee.Model):
     todo_id = peewee.AutoField(primary_key=True)
     text = peewee.TextField()
     done = peewee.DateTimeField(null=True)
-    # todo db reset: make non nullable
-    deleted = peewee.BooleanField(default=False, null=True)
-    # todo db reset: make non nullable
-    group = peewee.ForeignKeyField(TaskGroup, null=True)
+    deleted = peewee.BooleanField(default=False)
+    group = peewee.ForeignKeyField(TaskGroup)
 
     class Meta:
         database = db()
@@ -634,6 +646,8 @@ class EventType(peewee.Model):
     class Values(Enum):
         START = 'start'
         STOP = 'stop'
+        APP_START = 'app_start'
+        APP_STOP = 'app_stop'
 
     @classmethod
     def init_events(cls):
@@ -645,7 +659,7 @@ class EventType(peewee.Model):
 
 class Event(peewee.Model):
     event_id = peewee.AutoField(primary_key=True)
-    todo = peewee.ForeignKeyField(Todo, backref='events')
+    todo = peewee.ForeignKeyField(Todo, backref='events', null=True)
     event_type = peewee.ForeignKeyField(EventType)
     time = peewee.DateTimeField()
 

@@ -17,6 +17,7 @@ import dotrack.model as model
 from dotrack.shared import component, res, BASE_DIR
 
 import cairocffi as cairo
+import peewee
 
 
 @component("application")
@@ -211,7 +212,7 @@ class EventList(Div):
     def events(self):
         data = (model.Event
                 .select(model.Event, model.EventType, model.Todo)
-                .join(model.Todo)
+                .join(model.Todo, join_type=peewee.JOIN.LEFT_OUTER)
                 .switch(model.Event)
                 .join(model.EventType)
                 .order_by(model.Event.time.desc())
