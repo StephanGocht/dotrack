@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
 
 import datetime
 
@@ -10,7 +11,7 @@ import re
 from guiml.injectables import Injectable, injectable, Observable, Subscriber
 
 from dotrack.shared import BASE_DIR
-from dotrack.config import Config
+from dotrack.config import Config, SaveState
 
 
 class EvolveField:
@@ -186,11 +187,29 @@ class SqliteSchema(peewee.Model):
         primary_key = False
 
 
+@Config.register
+@dataclass
+class TodoServiceSettings:
+    task_groups: list[str] = field(default_factory=list)
+
+
+@SaveState.register
+@dataclass
+class TodoServiceState:
+    selected_group: Optional[str] = None
+    selected_todo: Optional[int] = None
+
+
+def find(elements, value, key, default):
+    return next((x for x in elements if key(x) == value), default)
+
+
 @injectable("application")
 class TodoService(Injectable):
     @dataclass
     class Dependencies(Injectable.Dependencies):
         config: Config
+        save: SaveState
 
     def on_init(self):
         super().on_init()
@@ -203,11 +222,21 @@ class TodoService(Injectable):
 
         self._selected = None
 
-        groups = self.config.config.task_groups
+        groups = self.config[TodoServiceSettings].task_groups
         self.task_groups = TaskGroup.get_groups(groups)
-
         self.selected_group = None
-        self.select_group(self.task_groups[0])
+
+        group = find(self.task_groups,
+                     value=self.save[TodoServiceState].selected_group,
+                     key=lambda x: x.name,
+                     default=self.task_groups[0])
+        self.select_group(group)
+
+        task = find(self.todos,
+                    value=self.save[TodoServiceState].selected_todo,
+                    key=lambda x: x.todo_id,
+                    default=None)
+        self.selected = task
 
     def select_group(self, group):
         if self.selected_group is not None:
@@ -226,6 +255,8 @@ class TodoService(Injectable):
         self._selected = value
 
     def on_destroy(self):
+        self.save[TodoServiceState].selected_group = self.selected_group.name
+        self.save[TodoServiceState].selected_todo = self.selected.todo_id
         super().on_destroy()
 
     @property
@@ -318,12 +349,12 @@ class TodoService(Injectable):
         self.on_todo_toggle(item)
 
 
+@SaveState.register
+@dataclass
 class SimpleTimer:
-    def __init__(self, duration):
-        self.duration = duration
-        self.last_start = None
-        self.elapsed = 0
-        self.reset()
+    duration: Optional[float] = None
+    last_start: Optional[float] = None
+    elapsed: float = 0.
 
     def is_running(self):
         return self.last_start is not None
@@ -337,12 +368,12 @@ class SimpleTimer:
 
     @property
     def progress(self):
-        result = max(0, self.remaining) / self.duration
+        result = max(0., self.remaining) / self.duration
         return result
 
     def reset(self):
         self.last_start = None
-        self.elapsed = 0
+        self.elapsed = 0.
 
     def start(self):
         self.last_start = time.monotonic()
@@ -352,32 +383,42 @@ class SimpleTimer:
         self.last_start = None
 
 
+@Config.register
+@dataclass
+class PomodoroTimer:
+    duration: int = 20 * 60
+
+
 @injectable("application")
 class Timer(Injectable, Subscriber):
     @dataclass
     class Dependencies(Injectable.Dependencies):
         todo_service: TodoService
         config: Config
+        save: SaveState
 
     def on_init(self):
         super().on_init()
         self.subscribe('on_selected_changed', self.todo_service)
 
-        config = self.config.get().pomodoro
+        config = self.config[PomodoroTimer]
 
         self.on_reset = Observable()
-        self.timer = SimpleTimer(config.duration)
-        self.selected = None
+        self.timer = self.save[SimpleTimer]
+        self.timer.duration = config.duration
 
     def on_destroy(self):
         super().on_destroy()
         self.cancel_subscriptions()
 
+    @property
+    def selected(self):
+        return self.todo_service.selected
+
     def on_selected_changed(self, todo):
         self.stop()
-        self.selected = todo
-        if self.selected is not None:
-            self.start()
+        if todo is not None:
+            self.start(todo)
 
     def is_running(self):
         return self.timer.is_running()
@@ -393,15 +434,18 @@ class Timer(Injectable, Subscriber):
     def is_active(self):
         return self.selected is not None
 
-    def start(self):
-        if not self.is_active():
+    def start(self, todo=None):
+        if not self.is_active() and todo is None:
             return
 
         self.timer.start()
 
-        if self.selected is not None:
+        if todo is None:
+            todo = self.selected
+
+        if todo is not None:
             Event.create(
-                todo=self.selected,
+                todo=todo,
                 event_type=EventType.START,
                 time=datetime.datetime.now())
 
