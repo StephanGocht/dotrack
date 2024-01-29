@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools >= 64"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+dotrack = "dotrack:__main__.main"
+
+[project]
+name = "dotrack"
+version = "0.1.0"
+authors = [
+  { name="Stephan Gocht", email="gocht@mailbox.org" },
+]
+description = "A todo list with pomodoro time tracker."
+readme = "README.md"
+dependencies = [
+    "guiml",
+    "peewee"
+]
+
+[tool.setuptools]
+packages = ["dotrack"]
