@@ -665,3 +665,33 @@ class Event(peewee.Model):
 
     class Meta:
         database = db()
+
+
+@injectable("event_list")
+class EventEditService(Injectable):
+    @dataclass
+    class Dependencies(Injectable.Dependencies):
+        pass
+
+    def on_init(self):
+        self.reset()
+
+    def reset(self):
+        self.edit_event_id = None
+        self.edit = None
+
+    def write_edit(self, event, value):
+        assert self.edit_event_id == event.event_id
+        event.time = datetime.datetime.fromisoformat(value)
+        event.save()
+        self.reset()
+
+    def set_edit(self, event, value):
+        self.edit_event_id = event.event_id
+        self.edit = value
+
+    def get_edit(self, event):
+        if event.event_id == self.edit_event_id:
+            return self.edit
+        else:
+            return None

@@ -13,11 +13,13 @@ from dotrack import icon  # noqa: F401
 from dotrack import timer  # noqa: F401
 from dotrack.model import TodoService
 import dotrack.model as model
+from typing import Callable, Optional
 
 from dotrack.shared import component, res, BASE_DIR
 
 import cairocffi as cairo
 import peewee
+import datetime
 
 
 @component("application")
@@ -35,7 +37,7 @@ def main():
 @injectable("application")
 class RouterService(Injectable):
     def on_init(self):
-        self.view = 'todo'
+        self.view = 'events'
 
 
 @component("menu")
@@ -98,6 +100,10 @@ class Color:
     green: float = 0.
     blue: float = 0.
     alpha: float = 0.
+
+    @classmethod
+    def white(cls):
+        return Color(1, 1, 1, 1)
 
 
 @component(name="exp_display")
@@ -211,7 +217,9 @@ class EventList(Div):
     @property
     def events(self):
         data = (model.Event
+
                 .select(model.Event, model.EventType, model.Todo)
+                .where(model.Event.todo_id.is_null(False))
                 .join(model.Todo, join_type=peewee.JOIN.LEFT_OUTER)
                 .switch(model.Event)
                 .join(model.EventType)
@@ -220,8 +228,52 @@ class EventList(Div):
                 )
         return data
 
-    def format_time(self, event):
-        return str(event.time)[:19]
+
+@component("time_edit")
+class TimeEdit(Div):
+    @dataclass
+    class Dependencies(Div.Dependencies):
+        event_edit: model.EventEditService
+
+    @dataclass
+    class Properties(Div.Properties):
+        event: Optional[model.Event] = None
+        on_update: Optional[Callable[datetime.datetime, None]] = None
+
+    @property
+    def edit(self):
+        return self.time is not None
+
+    @property
+    def time(self):
+        return self.dependencies.event_edit.get_edit(self.properties.event)
+
+    @property
+    def valid(self):
+        try:
+            self.as_date()
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def as_date(self):
+        return datetime.datetime.fromisoformat(self.time)
+
+    @time.setter
+    def time(self, value):
+        self.dependencies.event_edit.set_edit(self.properties.event, value)
+
+    def format_time(self):
+        return str(self.properties.event.time)[:19]
+
+    def start_edit(self):
+        self.time = self.format_time()
+
+    def save(self, text):
+        if self.valid:
+            event = self.properties.event
+            self.dependencies.event_edit.write_edit(event, self.time)
 
 
 @component(name="event")
@@ -346,14 +398,6 @@ class Todo(Container):
 
     def is_selected(self):
         return self.dependencies.todo_service.is_selected(self.item)
-
-
-if __name__ == '__main__':
-    main()
-
-
-def main():
-    pass
 
 
 if __name__ == '__main__':

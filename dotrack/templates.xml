@@ -48,10 +48,22 @@
                 <text control="if event.todo is not None"
                       col="0" colspan="8" py_row="i" py_text="event.todo.text"></text>
                 <text col="7" colspan="1" py_row="i" py_text="event.event_type.name"></text>
-                <text col="8" colspan="2" py_row="i" py_text="self.format_time(event)"></text>
+                <time_edit col="8" colspan="2" py_row="i"  py_event="event"></time_edit>
             </div>
         </div>
     </event_list>
+
+    <time_edit>
+        <text
+            control="if not self.edit"
+            py_text="self.format_time()"
+            on_click="self.start_edit" />
+        <input
+            control="if self.edit"
+            bind_text="self.time"
+            class_invalid="not self.valid"
+            on_submit="self.save" />
+    </time_edit>
 
     <event>
         <text py_text="self.event.todo.text"></text>

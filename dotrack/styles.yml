@@ -150,6 +150,14 @@ event_list:
             right: 10
             bottom: 10
 
+time_edit:
+    .invalid:
+        background:
+          red: 1
+          green: 0.8
+          blue: 0.8
+          alpha: 1.
+
 event:
     event:
         layout: stack
